@@ -1,0 +1,190 @@
+import re
+import random
+from collections import Counter
+import psycopg2
+
+# ---------------------------------------------------
+# 1. READ AND EXTRACT COLOURS FROM HTML FILE
+# ---------------------------------------------------
+
+def extract_colours_from_html(file_path):
+    with open(file_path, "r") as file:
+        html = file.read()
+
+    # Extract table data between <td>...</td>
+    matches = re.findall(r"<td>(.*?)</td>", html, re.DOTALL)
+
+    colours = []
+
+    for item in matches:
+        if "," in item:
+            items = item.split(",")
+            for colour in items:
+                cleaned = colour.strip().upper()
+
+                # Fix wrong spellings
+                if cleaned == "ARSH":
+                    cleaned = "ASH"
+                if cleaned == "BLEW":
+                    cleaned = "BLUE"
+
+                colours.append(cleaned)
+
+    return colours
+
+
+file_path = "python_class_question.html"
+colours = extract_colours_from_html(file_path)
+
+# ---------------------------------------------------
+# 2. FREQUENCY COUNT
+# ---------------------------------------------------
+
+frequency = Counter(colours)
+total_colours = len(colours)
+
+print("Colour Frequency:\n", frequency)
+print("Total Colours:", total_colours)
+
+# ---------------------------------------------------
+# 3. MEAN COLOUR (Using numeric mapping)
+# ---------------------------------------------------
+
+# Assign numbers to colours
+unique_colours = sorted(frequency.keys())
+colour_to_number = {colour: i+1 for i, colour in enumerate(unique_colours)}
+number_to_colour = {v: k for k, v in colour_to_number.items()}
+
+numeric_values = []
+for colour in colours:
+    numeric_values.append(colour_to_number[colour])
+
+mean_value = sum(numeric_values) / len(numeric_values)
+mean_colour = number_to_colour[round(mean_value)]
+
+print("\nMean Colour:", mean_colour)
+
+# ---------------------------------------------------
+# 4. MOST WORN (MODE)
+# ---------------------------------------------------
+
+most_worn = frequency.most_common(1)[0][0]
+print("Most Worn Colour:", most_worn)
+
+# ---------------------------------------------------
+# 5. MEDIAN COLOUR
+# ---------------------------------------------------
+
+sorted_numbers = sorted(numeric_values)
+n = len(sorted_numbers)
+
+if n % 2 == 1:
+    median_number = sorted_numbers[n//2]
+else:
+    median_number = (sorted_numbers[n//2 - 1] + sorted_numbers[n//2]) / 2
+
+median_colour = number_to_colour[round(median_number)]
+print("Median Colour:", median_colour)
+
+# ---------------------------------------------------
+# 6. VARIANCE (BONUS)
+# ---------------------------------------------------
+
+mean_num = sum(numeric_values) / len(numeric_values)
+variance = sum((x - mean_num) ** 2 for x in numeric_values) / len(numeric_values)
+
+print("Variance:", variance)
+
+# ---------------------------------------------------
+# 7. PROBABILITY OF RED
+# ---------------------------------------------------
+
+prob_red = frequency["RED"] / total_colours
+print("Probability of choosing RED:", prob_red)
+
+# ---------------------------------------------------
+# 8. SAVE TO POSTGRESQL DATABASE
+# ---------------------------------------------------
+
+def save_to_postgres(freq_dict):
+    try:
+        conn = psycopg2.connect(
+            host="localhost",
+            database="bincom_test",
+            user="postgres",
+            password="your_password"
+        )
+
+        cur = conn.cursor()
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS colour_frequency (
+            id SERIAL PRIMARY KEY,
+            colour VARCHAR(50),
+            frequency INTEGER
+        )
+        """)
+
+        for colour, freq in freq_dict.items():
+            cur.execute(
+                "INSERT INTO colour_frequency (colour, frequency) VALUES (%s, %s)",
+                (colour, freq)
+            )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        print("Data saved to PostgreSQL successfully!")
+
+    except Exception as e:
+        print("Database Error:", e)
+
+
+# Uncomment after configuring PostgreSQL
+# save_to_postgres(frequency)
+
+
+# ---------------------------------------------------
+# 9. RECURSIVE SEARCH
+# ---------------------------------------------------
+
+def recursive_search(arr, target, index=0):
+    if index >= len(arr):
+        return False
+    if arr[index] == target:
+        return True
+    return recursive_search(arr, target, index + 1)
+
+
+numbers = [1, 5, 8, 10, 20, 35]
+print("Search 10:", recursive_search(numbers, 10))
+
+
+# ---------------------------------------------------
+# 10. GENERATE RANDOM 4-BIT BINARY AND CONVERT
+# ---------------------------------------------------
+
+binary_number = ''.join(str(random.randint(0,1)) for _ in range(4))
+decimal_value = int(binary_number, 2)
+
+print("Random Binary:", binary_number)
+print("Converted to Base 10:", decimal_value)
+
+
+# ---------------------------------------------------
+# 11. SUM OF FIRST 50 FIBONACCI NUMBERS
+# ---------------------------------------------------
+
+def fibonacci_sum(n):
+    a, b = 0, 1
+    total = 0
+
+    for _ in range(n):
+        total += a
+        a, b = b, a + b
+
+    return total
+
+
+print("Sum of first 50 Fibonacci numbers:", fibonacci_sum(50))
