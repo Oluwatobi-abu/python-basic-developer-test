@@ -6,6 +6,7 @@ This project analyzes the colours of dresses worn by Bincom ICT staff during the
 The program extracts colour data from an HTML file, cleans inconsistencies, performs statistical computations, stores results in PostgreSQL, and implements additional algorithmic tasks.
 
 🚀 Features Implemented
+
 1️⃣ Data Extraction
 
 Extracts colour data from an HTML table using Regular Expressions.
@@ -107,3 +108,4 @@ Sum of first 50 Fibonacci numbers: 20365011073
 
 Abubakar Oluwatobi
 Python Developer
+
